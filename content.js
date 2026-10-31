@@ -1,6 +1,10 @@
 (() => {
   // Edge has its own Mini Menu, so this one stays off there (unless turned on in settings).
   const IS_EDGE = /\bEdg\//.test(navigator.userAgent);
+  // After the extension is reloaded or updated, tabs that were already open keep an orphaned copy of this
+  // script whose chrome.* calls throw "Extension context invalidated". Detect that and go quiet.
+  const alive = () => { try { return !!(chrome.runtime && chrome.runtime.id); } catch (_) { return false; } };
+  if (!alive()) return;
   let edgeOverride = false;
   chrome.storage.local.get({ edgeOverride: false }, (r) => (edgeOverride = !!r.edgeOverride));
   chrome.storage.onChanged.addListener((c) => { if (c.edgeOverride) edgeOverride = !!c.edgeOverride.newValue; });
@@ -35,6 +39,7 @@
   }
 
   function copyText(text) {
+    try { if (alive()) chrome.runtime.sendMessage({ type: "clip-set", text }, () => void chrome.runtime.lastError); } catch (_) {}
     return navigator.clipboard.writeText(text).catch(() => {
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -66,7 +71,7 @@
       run: () => {
         if (!disabledSites.includes(host)) {
           disabledSites = [...disabledSites, host];
-          chrome.storage.local.set({ disabledSites });
+          if (alive()) try { chrome.storage.local.set({ disabledSites }); } catch (_) {}
         }
       }
     }
@@ -313,6 +318,23 @@
       return n;
     };
 
+    // A site popup sits in the "above" row (Claude's Reply is top-centre, ChatGPT's Ask is top-left): slide along
+    // that row, nearest to the mouse first, before giving up and dropping below the selection.
+    const rowTop = endRect.top - mh - 6;
+    const seenL = new Set();
+    const aside = [];
+    for (const o of obstacles) {
+      if (o.bottom < rowTop - GAP || o.top > rowTop + mh + GAP) continue;
+      for (const l of [o.right + GAP, o.left - MW - GAP]) {
+        const k = Math.round(l / 6);
+        if (seenL.has(k) || Math.abs(l - endRect.right) > 320) continue;
+        seenL.add(k);
+        aside.push({ l, t: rowTop });
+      }
+    }
+    aside.sort((a, b) => Math.abs(a.l - endRect.right) - Math.abs(b.l - endRect.right));
+    spots.splice(1, 0, ...aside.slice(0, 4));
+
     const here = menuHost.getBoundingClientRect();
     const currentScore = onlyIfBetter ? score(here.left, here.top) : Infinity;
     if (onlyIfBetter && currentScore === 0) return;
@@ -334,7 +356,7 @@
   function onSelectionChange(e) {
     if (menuHost && e && e.composedPath && e.composedPath().includes(menuHost)) return;
     setTimeout(() => {
-      if (blocked() || disabledSites.includes(host)) return removeMenu();
+      if (!alive() || blocked() || disabledSites.includes(host)) return removeMenu();
       const sel = window.getSelection();
       const text = sel ? sel.toString().trim() : "";
       if (!text) return removeMenu();

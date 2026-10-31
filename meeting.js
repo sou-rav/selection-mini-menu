@@ -109,5 +109,10 @@
     chrome.storage.local.get({ recEnabled: true }, (r) => (recEnabled = r.recEnabled !== false));
     chrome.storage.onChanged.addListener((c) => { if (c.recEnabled) recEnabled = c.recEnabled.newValue !== false; });
   } catch (_) {}
-  setInterval(() => { if (recEnabled) check(); }, 1500);
+  const alive = () => { try { return !!(chrome.runtime && chrome.runtime.id); } catch (_) { return false; } };
+  const timer = setInterval(() => {
+    if (!alive()) { clearInterval(timer); return; }   // extension was reloaded: stop quietly
+    if (!recEnabled) return;
+    try { check(); } catch (_) {}
+  }, 1500);
 })();

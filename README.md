@@ -61,6 +61,13 @@ Downloads are saved into sub-folders of your Downloads folder based on their fil
 - It also sorts the extension's own screenshots and recordings that are saved as normal downloads. Recordings saved to a folder you chose in the recorder are not affected.
 - If another download-organizer extension is installed (including the old standalone Download Router), disable it. Only one extension can choose a download's folder.
 
+## Paste menu
+
+- After you copy text in the browser (Ctrl+C, or Copy in the selection menu), clicking an empty text box shows a small **Paste** button next to your click
+- Only copies made inside the browser are seen; copies from other apps are not (this keeps the extension from needing the "read your clipboard" permission)
+- The copied text is kept in memory for 5 minutes and cleared when the browser closes. Nothing is stored on disk or sent anywhere.
+- Never shown in password fields. Off per site with the same switch as the selection menu, or everywhere in Settings.
+
 ## 5. Discord Send button
 
 - Adds a small paper-plane **Send** icon inside Discord's message box, before the gift / GIF / sticker / emoji icons

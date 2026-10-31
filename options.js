@@ -96,7 +96,7 @@ if (/\bEdg\//.test(navigator.userAgent)) $("edgeBox").classList.remove("hide");
 chrome.storage.local.get({ discordSend: true }, ({ discordSend }) => { $("discordSend").checked = discordSend !== false; });
 $("discordSend").onchange = () => chrome.storage.local.set({ discordSend: $("discordSend").checked });
 
-for (const k of ["recEnabled", "shotsEnabled", "menuEnabled"]) {
+for (const k of ["recEnabled", "shotsEnabled", "menuEnabled", "pasteEnabled"]) {
   chrome.storage.local.get({ [k]: true }, (r) => { $(k).checked = r[k] !== false; });
   $(k).onchange = () => chrome.storage.local.set({ [k]: $(k).checked });
 }

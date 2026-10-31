@@ -50,6 +50,8 @@ chrome.storage.onChanged.addListener((c) => {
   if (c.routerEnabled) document.body.classList.toggle("no-dl", c.routerEnabled.newValue === false);
 });
 
+if (!/Windows/.test(navigator.userAgent)) $("snip").classList.add("hide"); // Snipping Tool is Windows-only
+
 $("settings").onclick = () => { chrome.runtime.openOptionsPage(); window.close(); };
 
 /* ---------- Per-site toggle for the selection menu ---------- */

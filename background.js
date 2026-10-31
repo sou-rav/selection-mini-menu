@@ -20,6 +20,25 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   else if (msg.type === "open-recorder") openRecorder(msg.name);
 });
 
+/* ---------- Paste menu: the last thing copied, in memory only, for 5 minutes ---------- */
+chrome.runtime.onMessage.addListener((msg, sender, respond) => {
+  if (!msg) return;
+  if (msg.type === "clip-set" && typeof msg.text === "string") {
+    chrome.storage.session.get({ clip: null }).then(({ clip }) => {
+      if (clip && clip.text === msg.text && Date.now() - clip.ts < 2000) return respond({ ok: true }); // same copy seen twice
+      const rec = { text: msg.text.slice(0, 20000), ts: Date.now(), id: Date.now() + ":" + Math.random().toString(36).slice(2, 7) };
+      return chrome.storage.session.set({ clip: rec }).then(() => respond({ ok: true }));
+    }).catch(() => respond({ ok: false }));
+    return true;
+  }
+  if (msg.type === "clip-get") {
+    chrome.storage.session.get({ clip: null })
+      .then(({ clip }) => respond(clip && Date.now() - clip.ts < 5 * 60 * 1000 ? clip : null))
+      .catch(() => respond(null));
+    return true;
+  }
+});
+
 /* ---------- Windows Snipping Tool (popup has closed, so it isn't captured) ---------- */
 function snip(msg) {
   setTimeout(async () => {
